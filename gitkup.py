@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.0.2"
+__version__ = "0.1.0"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -15,17 +15,65 @@ __status__ = "Development"
 import os
 import sys
 import signal
-import requests
-import json
 import argparse
 from datetime import datetime
+
+import configparser
+import logging
+
+import json
+import requests
+
 from time import gmtime, strftime
 from subprocess import Popen, PIPE
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import git
 from git import Repo, GitCommandError
 
 # TODO: log shit around
+
+
+def readConfig(default_conf="config.local.ini"):
+    """ setup configuration
+
+    :param default_conf: filename
+    :param type: string
+
+    :return MAILSERVER: mail server host
+    :return type: string
+
+    :return MAILPORT: mail server port
+    :return type: int
+
+    :return MAILACCOUNT: mail account sender
+    :return type: string
+
+    :return MAILPASSWORD: mail password
+    :return type: string
+
+    :return DESTINATIONMAIL: mail account destination
+    :return type: string
+    """
+    if not os.path.exists(default_conf):
+        # LOGGER.error('no local config file founded.')
+        sys.exit("Create config.local.ini from config.ini and restart.")
+    # load configparser with interpolation to allow dynamic config file
+    config = configparser.ConfigParser()
+    config._interpolation = configparser.ExtendedInterpolation()
+    config.read(default_conf)
+    # LOGGER.info("Config file loaded %s", default_conf)
+    MAILSERVER = config['MAIL']['SERVER']
+    MAILPORT = config['MAIL']['PORT']
+    MAILACCOUNT = config['MAIL']['ACCOUNT']
+    MAILPASSWORD = config['MAIL']['PASSWORD']
+    DESTINATIONMAIL = config['MAIL']['DESTINATION']
+    # LOGGER.debug('MAIL - CONFIGURATION LOADED')
+
+    return (MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
 
 
 def signal_handler(signal, frame):
@@ -35,7 +83,13 @@ def signal_handler(signal, frame):
 
 
 def makedir(BACKUP_DIR):
-    """ magic!!! """
+    """ magic!!!
+
+    :param BACKUP_DIR: filename
+    :param type: string
+
+    :return: create dir or print skip
+    """
     if os.path.isdir(BACKUP_DIR) is False:
         try:
             os.mkdir(BACKUP_DIR)
@@ -51,7 +105,19 @@ def makedir(BACKUP_DIR):
 
 
 def gitkup(BACKUP_DIR, URL, TOKEN):
-    # Request GitLab API to retrieve projects
+    """ Request GitLab API to retrieve projects list and backup
+
+    :param BACKUP_DIR: filename
+    :param type: string
+
+    :param URL: gitlab server domain
+    :param type: string
+
+    :param TOKEN: private gitlab token
+    :param type: string
+
+    : return: git clone or update private repositories
+    """
     gitlab_url = (
         "https://{}/api/v4/projects?visibility=private&private_token={}".format(URL, TOKEN))
     print("Please wait: this operation may take a while ...")
@@ -80,6 +146,7 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
             backup_state.communicate()
             git_query.communicate()
 
+
 def main():
     """ main """
     # Start timestamp
@@ -101,6 +168,9 @@ def main():
     TOKEN = args.token
     BACKUP_DIR = args.dest
 
+    MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = readConfig()
+    print(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
+
     makedir(BACKUP_DIR)
     gitkup(BACKUP_DIR, URL, TOKEN)
 
@@ -108,18 +178,19 @@ def main():
     print("Backup end at: {}".format(
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     sys.exit("finish")
-    quit()
+    quit('finish')
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except GitCommandError as err:
-            del err
-            sys.exit("Please configure ssh identity on your ssh-agent and retry")
-    except:
-        signal.signal(signal.SIGINT, signal_handler)
-        print('Press Ctrl+C to exit')
-        print("Backup end at: {}".format(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        signal.pause()
+    main()
+    # try:
+    #     main()
+    # except GitCommandError as err:
+    #         del err
+    #         sys.exit("Please configure ssh identity on your ssh-agent and retry")
+    # except:
+    #     signal.signal(signal.SIGINT, signal_handler)
+    #     print('Press Ctrl+C to exit')
+    #     print("Backup end at: {}".format(
+    #         datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    #     signal.pause()
