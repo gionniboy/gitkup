@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -28,7 +28,6 @@ from time import gmtime, strftime
 from subprocess import Popen, PIPE
 
 import smtplib
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import email.utils
 
@@ -186,7 +185,7 @@ def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, G
     # If we can encrypt this session, do it
     # print('(starting TLS)')
     # s.starttls()
-    s.ehlo()  # reidentify ourselves over TLS connection
+    # s.ehlo()  # reidentify ourselves over TLS connection
 
     if s.has_extn('AUTH'):
         print('(logging in)')
@@ -228,15 +227,14 @@ def main():
     MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = readConfig()
 
     makedir(BACKUP_DIR)
-    #gitkup(BACKUP_DIR, URL, TOKEN)
+    gitkup(BACKUP_DIR, URL, TOKEN)
     sendmail(MAILSERVER, MAILPORT, MAILACCOUNT,
              MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER=URL)
 
     # End timestamp
     print("Backup end at: {}".format(
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    sys.exit("finish")
-    quit('finish')
+    quit()
 
 
 if __name__ == '__main__':
