@@ -53,9 +53,9 @@ def setup_logging(filepath="logging.json", log_level=logging.INFO):
         sys.exit('Create logging.json config file and restart.')
 
     with open(filepath, 'r') as fileconfig:
-            config = json.load(fileconfig)
-            logging.config.dictConfig(config)
-            LOGGER.info('LOGGING SETUP from JSON %s', filepath)
+        config = json.load(fileconfig)
+        logging.config.dictConfig(config)
+        LOGGER.info('LOGGING SETUP from JSON %s', filepath)
 
     LOGGER.debug('LOGGING OK - path %s - level %s', filepath, log_level)
 
@@ -146,9 +146,6 @@ def makedir(BACKUP_DIR):
 
     :return: create dir or print skip
     """
-
-
-
     if not os.path.exists(BACKUP_DIR):
         try:
             os.mkdir(BACKUP_DIR)
