@@ -7,13 +7,14 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
 
 import os
 import sys
+import re
 import signal
 import argparse
 from datetime import datetime
@@ -69,17 +70,35 @@ def readConfig(default_conf="config.local.ini"):
     MAILSERVER = config['MAIL']['SERVER']
     MAILPORT = config['MAIL']['PORT']
     MAILACCOUNT = config['MAIL']['ACCOUNT']
+    validate_email(MAILACCOUNT)
     MAILPASSWORD = config['MAIL']['PASSWORD']
     DESTINATIONMAIL = config['MAIL']['DESTINATION']
+    validate_email(DESTINATIONMAIL)
     # LOGGER.debug('MAIL - CONFIGURATION LOADED')
 
     return (MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
 
 
-def signal_handler(signal, frame):
-    """ trap ctrl-c signal """
-    print('You pressed Ctrl+C!')
-    quit()
+def validate_email(email):
+    """Check if the argument is a syntax-valid email.
+
+    :param email: email string from config
+    :param type: string
+
+    :return: validate or exit
+    """
+    mail_regex = re.compile(
+        r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$')
+    print(email)
+    print(mail_regex)
+    if not mail_regex.match(email):
+        sys.exit("Invalid domain specified.")
+
+
+# def signal_handler(signal, frame):
+#     """ trap ctrl-c signal """
+#     print('You pressed Ctrl+C!')
+#     quit()
 
 
 def makedir(BACKUP_DIR):
@@ -227,7 +246,7 @@ def main():
     MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = readConfig()
 
     makedir(BACKUP_DIR)
-    gitkup(BACKUP_DIR, URL, TOKEN)
+    #gitkup(BACKUP_DIR, URL, TOKEN)
     sendmail(MAILSERVER, MAILPORT, MAILACCOUNT,
              MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER=URL)
 
@@ -243,9 +262,12 @@ if __name__ == '__main__':
     except GitCommandError as err:
             del err
             sys.exit("Please configure ssh identity on your ssh-agent and retry")
-    except:
-        signal.signal(signal.SIGINT, signal_handler)
-        print('Press Ctrl+C to exit')
-        print("Backup end at: {}".format(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        signal.pause()
+    except KeyboardInterrupt:
+        print("interrupted, stopping ...")
+        sys.exit(42)
+    # except:
+    #     signal.signal(signal.SIGINT, signal_handler)
+    #     print('Press Ctrl+C to exit')
+    #     print("Backup end at: {}".format(
+    #         datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    #     signal.pause()
