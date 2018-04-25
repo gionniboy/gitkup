@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -149,7 +149,7 @@ def makedir(BACKUP_DIR):
     if os.path.isdir(BACKUP_DIR) is False:
         try:
             os.mkdir(BACKUP_DIR)
-            LOGGER.info('Backup dir created: {}').format(BACKUP_DIR)
+            LOGGER.info('Backup dir created: %s', BACKUP_DIR)
         except PermissionError as err:
             LOGGER.warning(err)
             sys.exit('permission error')
@@ -191,7 +191,7 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
         if not os.path.exists(localPath):
             print("Create backup for {}".format(localPath))
             Repo.clone_from(url, localPath)
-            LOGGER.info("{} cloned".format(url))
+            LOGGER.info("%s cloned", url)
         else:
             print("Update backup for {}".format(localPath))
             # TODO: refactor this shit
@@ -202,7 +202,7 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
                                  stdout=PIPE, stderr=PIPE)
             backup_state.communicate()
             git_query.communicate()
-            LOGGER.info("{} updated".format(url))
+            LOGGER.info("%s updated", url)
 
 
 def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER):
@@ -261,8 +261,7 @@ def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, G
 def main():
     """ main """
     # Start timestamp
-    LOGGER.info("Backup starts at: {}".format(
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    LOGGER.info("Backup starts at: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     # Extract url from arguments
     parser = argparse.ArgumentParser(
         description='Fast backup private repos from gitlab server [api v4 - gitlab9.0+]',
@@ -288,8 +287,7 @@ def main():
              MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER=URL)
 
     # End timestamp
-    LOGGER.info("Backup end at: {}".format(
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    LOGGER.info("Backup end at: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     quit()
 
 
