@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -68,6 +68,7 @@ def readConfig(default_conf="config.local.ini"):
     config.read(default_conf)
     # LOGGER.info("Config file loaded %s", default_conf)
     MAILSERVER = config['MAIL']['SERVER']
+    validate_domain(MAILSERVER)
     MAILPORT = config['MAIL']['PORT']
     MAILACCOUNT = config['MAIL']['ACCOUNT']
     validate_email(MAILACCOUNT)
@@ -89,9 +90,21 @@ def validate_email(email):
     """
     mail_regex = re.compile(
         r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$')
-    print(email)
-    print(mail_regex)
     if not mail_regex.match(email):
+        sys.exit("Invalid domain specified.")
+
+
+def validate_domain(domain):
+    """Check if the argument is a syntax-valid domain.
+
+    :param domain: domain string from positional arg
+    :param type: string
+
+    :return: validate or exit
+    """
+    domain_regex = re.compile(
+        r'^(?=.{4,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{,61}[a-zA-Z0-9]\.)+[a-zA-Z0-9]{2,5}$')
+    if not domain_regex.match(domain):
         sys.exit("Invalid domain specified.")
 
 
@@ -246,7 +259,7 @@ def main():
     MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = readConfig()
 
     makedir(BACKUP_DIR)
-    #gitkup(BACKUP_DIR, URL, TOKEN)
+    gitkup(BACKUP_DIR, URL, TOKEN)
     sendmail(MAILSERVER, MAILPORT, MAILACCOUNT,
              MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER=URL)
 
