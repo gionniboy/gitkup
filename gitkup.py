@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -30,6 +30,7 @@ from subprocess import Popen, PIPE
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import email.utils
 
 import git
 from git import Repo, GitCommandError
@@ -147,6 +148,61 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
             git_query.communicate()
 
 
+def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER):
+    """ send notification mail
+
+    :param MAILSERVER: mail server host
+    :param type: string
+
+    :param MAILPORT: mail server port
+    :param type: int
+
+    :param MAILACCOUNT: mail account sender
+    :param type: string
+
+    :param MAILPASSWORD: mail password
+    :param type: string
+
+    :param DESTINATIONMAIL: mail account destination
+    :param type: string
+
+    :param GITLAB_SERVER: gitlab server url
+    :param type: string
+    """
+    print(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER)
+
+    # create email
+    message = MIMEText("gitkup task accomplished on {}".format(GITLAB_SERVER))
+    message.set_unixfrom(MAILACCOUNT)
+    message['From'] = email.utils.formataddr((MAILACCOUNT, MAILACCOUNT))
+    message['To'] = email.utils.formataddr(('Recipient', DESTINATIONMAIL))
+    message['Subject'] = "GITKUP task from {}".format(GITLAB_SERVER)
+
+    # TODO: make this shit ssl/tls compatible
+    # connect to mailserver
+    s = smtplib.SMTP_SSL(host=MAILSERVER, port=MAILPORT)
+    #s.set_debuglevel(True)
+    s.ehlo()
+    # If we can encrypt this session, do it
+    # print('(starting TLS)')
+    # s.starttls()
+    s.ehlo()  # reidentify ourselves over TLS connection
+
+    if s.has_extn('AUTH'):
+        print('(logging in)')
+        s.login(MAILACCOUNT, MAILPASSWORD)
+    else:
+        print('(no AUTH)')
+        quit()
+    # send the message via the server set up earlier.
+    s.sendmail(MAILACCOUNT,
+                    [DESTINATIONMAIL],
+                    message.as_string())
+    print("Mail sent succesfully")
+    del(message)
+    s.quit()
+
+
 def main():
     """ main """
     # Start timestamp
@@ -168,11 +224,13 @@ def main():
     TOKEN = args.token
     BACKUP_DIR = args.dest
 
+    # unpack config
     MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = readConfig()
-    print(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
 
     makedir(BACKUP_DIR)
-    gitkup(BACKUP_DIR, URL, TOKEN)
+    #gitkup(BACKUP_DIR, URL, TOKEN)
+    sendmail(MAILSERVER, MAILPORT, MAILACCOUNT,
+             MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER=URL)
 
     # End timestamp
     print("Backup end at: {}".format(
@@ -182,15 +240,14 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    # try:
-    #     main()
-    # except GitCommandError as err:
-    #         del err
-    #         sys.exit("Please configure ssh identity on your ssh-agent and retry")
-    # except:
-    #     signal.signal(signal.SIGINT, signal_handler)
-    #     print('Press Ctrl+C to exit')
-    #     print("Backup end at: {}".format(
-    #         datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    #     signal.pause()
+    try:
+        main()
+    except GitCommandError as err:
+            del err
+            sys.exit("Please configure ssh identity on your ssh-agent and retry")
+    except:
+        signal.signal(signal.SIGINT, signal_handler)
+        print('Press Ctrl+C to exit')
+        print("Backup end at: {}".format(
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        signal.pause()
