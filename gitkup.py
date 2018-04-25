@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.2.3"
+__version__ = "0.3.0"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -21,6 +21,7 @@ from datetime import datetime
 
 import configparser
 import logging
+import logging.config
 
 import json
 import requests
@@ -35,10 +36,31 @@ import email.utils
 import git
 from git import Repo, GitCommandError
 
-# TODO: log shit around
+
+# istanziate logger
+LOGGER = logging.getLogger(__name__)
 
 
-def readConfig(default_conf="config.local.ini"):
+def setup_logging(filepath="logging.json", log_level=logging.INFO):
+    """ setup logging based on json dict or env key override
+
+    :param filepath: filename
+    :param type: string
+
+    """
+    if not os.path.exists(filepath):
+        LOGGER.error('no logging config file founded.')
+        sys.exit('Create logging.json config file and restart.')
+
+    with open(filepath, 'r') as fileconfig:
+            config = json.load(fileconfig)
+            logging.config.dictConfig(config)
+            LOGGER.info('LOGGING SETUP from JSON %s', filepath)
+
+    LOGGER.debug('LOGGING OK - path %s - level %s', filepath, log_level)
+
+
+def read_config(default_conf="config.local.ini"):
     """ setup configuration
 
     :param default_conf: filename
@@ -60,13 +82,13 @@ def readConfig(default_conf="config.local.ini"):
     :return type: string
     """
     if not os.path.exists(default_conf):
-        # LOGGER.error('no local config file founded.')
+        LOGGER.error('no local config file founded.')
         sys.exit("Create config.local.ini from config.ini and restart.")
     # load configparser with interpolation to allow dynamic config file
     config = configparser.ConfigParser()
     config._interpolation = configparser.ExtendedInterpolation()
     config.read(default_conf)
-    # LOGGER.info("Config file loaded %s", default_conf)
+    LOGGER.info("Config file loaded %s", default_conf)
     MAILSERVER = config['MAIL']['SERVER']
     validate_domain(MAILSERVER)
     MAILPORT = config['MAIL']['PORT']
@@ -75,7 +97,7 @@ def readConfig(default_conf="config.local.ini"):
     MAILPASSWORD = config['MAIL']['PASSWORD']
     DESTINATIONMAIL = config['MAIL']['DESTINATION']
     validate_email(DESTINATIONMAIL)
-    # LOGGER.debug('MAIL - CONFIGURATION LOADED')
+    LOGGER.debug('MAIL - CONFIGURATION LOADED')
 
     return (MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
 
@@ -91,6 +113,7 @@ def validate_email(email):
     mail_regex = re.compile(
         r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$')
     if not mail_regex.match(email):
+        LOGGER.debug("Email not valid %s", email)
         sys.exit("Invalid domain specified.")
 
 
@@ -105,6 +128,7 @@ def validate_domain(domain):
     domain_regex = re.compile(
         r'^(?=.{4,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{,61}[a-zA-Z0-9]\.)+[a-zA-Z0-9]{2,5}$')
     if not domain_regex.match(domain):
+        LOGGER.debug("Domain not valid %s", domain)
         sys.exit("Invalid domain specified.")
 
 
@@ -125,15 +149,15 @@ def makedir(BACKUP_DIR):
     if os.path.isdir(BACKUP_DIR) is False:
         try:
             os.mkdir(BACKUP_DIR)
-            print("Backup dir created: {}".format(BACKUP_DIR))
+            LOGGER.info('Backup dir created: {}').format(BACKUP_DIR)
         except PermissionError as err:
-            print(err)
+            LOGGER.warning(err)
             sys.exit('permission error')
         except IOError as err:
-            print(err)
+            LOGGER.warning(err)
             sys.exit('IO error')
     else:
-        print("Directory exists: skip creation...")
+        LOGGER.info("Directory exists: skip creation...")
 
 
 def gitkup(BACKUP_DIR, URL, TOKEN):
@@ -167,6 +191,7 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
         if not os.path.exists(localPath):
             print("Create backup for {}".format(localPath))
             Repo.clone_from(url, localPath)
+            LOGGER.info("{} cloned".format(url))
         else:
             print("Update backup for {}".format(localPath))
             # TODO: refactor this shit
@@ -177,6 +202,7 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
                                  stdout=PIPE, stderr=PIPE)
             backup_state.communicate()
             git_query.communicate()
+            LOGGER.info("{} updated".format(url))
 
 
 def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER):
@@ -200,8 +226,6 @@ def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, G
     :param GITLAB_SERVER: gitlab server url
     :param type: string
     """
-    print(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER)
-
     # create email
     message = MIMEText("gitkup task accomplished on {}".format(GITLAB_SERVER))
     message.set_unixfrom(MAILACCOUNT)
@@ -220,16 +244,16 @@ def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, G
     # s.ehlo()  # reidentify ourselves over TLS connection
 
     if s.has_extn('AUTH'):
-        print('(logging in)')
+        LOGGER.debug('(logging in)')
         s.login(MAILACCOUNT, MAILPASSWORD)
     else:
-        print('(no AUTH)')
+        LOGGER.debug('(no AUTH)')
         quit()
     # send the message via the server set up earlier.
     s.sendmail(MAILACCOUNT,
                     [DESTINATIONMAIL],
                     message.as_string())
-    print("Mail sent succesfully")
+    LOGGER.info("Mail sent succesfully")
     del(message)
     s.quit()
 
@@ -237,7 +261,7 @@ def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, G
 def main():
     """ main """
     # Start timestamp
-    print("Backup starts at: {}".format(
+    LOGGER.info("Backup starts at: {}".format(
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     # Extract url from arguments
     parser = argparse.ArgumentParser(
@@ -256,7 +280,7 @@ def main():
     BACKUP_DIR = args.dest
 
     # unpack config
-    MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = readConfig()
+    MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = read_config()
 
     makedir(BACKUP_DIR)
     gitkup(BACKUP_DIR, URL, TOKEN)
@@ -264,13 +288,15 @@ def main():
              MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER=URL)
 
     # End timestamp
-    print("Backup end at: {}".format(
+    LOGGER.info("Backup end at: {}".format(
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     quit()
 
 
 if __name__ == '__main__':
     try:
+        # initializate logging
+        setup_logging()
         main()
     except GitCommandError as err:
             del err
