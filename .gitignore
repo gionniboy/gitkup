@@ -1,5 +1,6 @@
 *.local.*
 repos_backup*
+logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
