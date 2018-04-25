@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.3.1"
+__version__ = "0.3.3"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -42,7 +42,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def setup_logging(filepath="logging.json", log_level=logging.INFO):
-    """ setup logging based on json dict or env key override
+    """ setup logging based on json dict
 
     :param filepath: filename
     :param type: string
@@ -113,8 +113,8 @@ def validate_email(email):
     mail_regex = re.compile(
         r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$')
     if not mail_regex.match(email):
-        LOGGER.debug("Email not valid %s", email)
-        sys.exit("Invalid domain specified.")
+        LOGGER.error("Email not valid %s", email)
+        sys.exit("Invalid email specified.")
 
 
 def validate_domain(domain):
@@ -128,7 +128,7 @@ def validate_domain(domain):
     domain_regex = re.compile(
         r'^(?=.{4,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{,61}[a-zA-Z0-9]\.)+[a-zA-Z0-9]{2,5}$')
     if not domain_regex.match(domain):
-        LOGGER.debug("Domain not valid %s", domain)
+        LOGGER.error("Domain not valid %s", domain)
         sys.exit("Invalid domain specified.")
 
 
@@ -146,16 +146,22 @@ def makedir(BACKUP_DIR):
 
     :return: create dir or print skip
     """
-    if os.path.isdir(BACKUP_DIR) is False:
+
+
+
+    if not os.path.exists(BACKUP_DIR):
         try:
             os.mkdir(BACKUP_DIR)
             LOGGER.info('Backup dir created: %s', BACKUP_DIR)
         except PermissionError as err:
-            LOGGER.warning(err)
+            LOGGER.error(err)
             sys.exit('permission error')
         except IOError as err:
-            LOGGER.warning(err)
+            LOGGER.error(err)
             sys.exit('IO error')
+    elif os.path.isfile(BACKUP_DIR):
+        LOGGER.error('File exists: %s', BACKUP_DIR)
+        sys.exit("file exists - dir can't be create")
     else:
         LOGGER.info("Directory exists: skip creation...")
 
@@ -176,12 +182,12 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
     """
     gitlab_url = (
         "https://{}/api/v4/projects?visibility=private&private_token={}".format(URL, TOKEN))
-    print("Please wait: this operation may take a while ...")
+    LOGGER.info("Please wait: this operation may take a while ...")
     r = requests.get(gitlab_url)
     if r.status_code != 200:
         # TODO: better status code handling here
         r.raise_for_status()
-        print("Error, please retry")
+        LOGGER.error("Error, please retry")
         sys.exit(0)
 
     projects = r.json()
@@ -189,11 +195,11 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
         url = project["ssh_url_to_repo"]
         localPath = "{}/{}.git".format(BACKUP_DIR, project["path"])
         if not os.path.exists(localPath):
-            print("Create backup for {}".format(localPath))
+            LOGGER.info("Create backup for %s", localPath)
             Repo.clone_from(url, localPath)
             LOGGER.info("%s cloned", url)
         else:
-            print("Update backup for {}".format(localPath))
+            LOGGER.info("Update backup for %s", localPath)
             # TODO: refactor this shit
             dir_command = ['cd', localPath]
             git_command = ['git', 'remote', 'update']
@@ -288,7 +294,6 @@ def main():
 
     # End timestamp
     LOGGER.info("Backup end at: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    quit()
 
 
 if __name__ == '__main__':
