@@ -7,7 +7,7 @@ __author__ = "GB Pullarà"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 __maintainer__ = "gionniboy"
 __email__ = "giovbat@gmail.com"
 __status__ = "Development"
@@ -66,6 +66,12 @@ def read_config(default_conf="config.local.ini"):
     :param default_conf: filename
     :param type: string
 
+    :return GITLABSERVER: gitlab server host
+    :return type: string
+
+    :return GITLABTOKEN: gitlab private token
+    :return type: string
+
     :return MAILSERVER: mail server host
     :return type: string
 
@@ -89,6 +95,11 @@ def read_config(default_conf="config.local.ini"):
     config._interpolation = configparser.ExtendedInterpolation()
     config.read(default_conf)
     LOGGER.info("Config file loaded %s", default_conf)
+
+    # load gitlab section
+    GITLABSERVER = config['GITLAB']['SERVER']
+    GITLABTOKEN = config['GITLAB']['TOKEN']
+    # load mail section
     MAILSERVER = config['MAIL']['SERVER']
     validate_domain(MAILSERVER)
     MAILPORT = config['MAIL']['PORT']
@@ -99,7 +110,7 @@ def read_config(default_conf="config.local.ini"):
     validate_email(DESTINATIONMAIL)
     LOGGER.debug('MAIL - CONFIGURATION LOADED')
 
-    return (MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
+    return (GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
 
 
 def validate_email(email):
@@ -208,7 +219,7 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
             LOGGER.info("%s updated", url)
 
 
-def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER):
+def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, GITLABSERVER):
     """ send notification mail
 
     :param MAILSERVER: mail server host
@@ -226,15 +237,15 @@ def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, G
     :param DESTINATIONMAIL: mail account destination
     :param type: string
 
-    :param GITLAB_SERVER: gitlab server url
+    :param GITLABSERVER: gitlab server url
     :param type: string
     """
     # create email
-    message = MIMEText("gitkup task accomplished on {}".format(GITLAB_SERVER))
+    message = MIMEText("gitkup task accomplished on {}".format(GITLABSERVER))
     message.set_unixfrom(MAILACCOUNT)
     message['From'] = email.utils.formataddr((MAILACCOUNT, MAILACCOUNT))
     message['To'] = email.utils.formataddr(('Recipient', DESTINATIONMAIL))
-    message['Subject'] = "GITKUP task from {}".format(GITLAB_SERVER)
+    message['Subject'] = "GITKUP task from {}".format(GITLABSERVER)
 
     # TODO: make this shit ssl/tls compatible
     # connect to mailserver
@@ -269,25 +280,23 @@ def main():
     parser = argparse.ArgumentParser(
         description='Fast backup private repos from gitlab server [api v4 - gitlab9.0+]',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--url", default="gitlab.com",
-                        type=str, help="GitLab Server url")
-    parser.add_argument("--token", required=True, type=str,
-                        help="Private Token with read permission")
+    # parser.add_argument("--url", default="gitlab.com",
+    #                     type=str, help="GitLab Server url")
+    # parser.add_argument("--token", required=True, type=str,
+    #                     help="Private Token with read permission")
     parser.add_argument(
         "--dest", default="./repos_backup", help="where repositories will be backup")
     args = parser.parse_args()
 
-    URL = args.url
-    TOKEN = args.token
     BACKUP_DIR = args.dest
 
     # unpack config
-    MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = read_config()
+    GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = read_config()
 
     makedir(BACKUP_DIR)
-    gitkup(BACKUP_DIR, URL, TOKEN)
+    gitkup(BACKUP_DIR, GITLABSERVER, GITLABTOKEN)
     sendmail(MAILSERVER, MAILPORT, MAILACCOUNT,
-             MAILPASSWORD, DESTINATIONMAIL, GITLAB_SERVER=URL)
+             MAILPASSWORD, DESTINATIONMAIL, GITLABSERVER)
 
     # End timestamp
     LOGGER.info("Backup end at: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -299,7 +308,7 @@ if __name__ == '__main__':
         setup_logging()
         main()
     except GitCommandError as err:
-            del err
+            LOGGER.error('Git Command Error %s', err)
             sys.exit("Please configure ssh identity on your ssh-agent and retry")
     except KeyboardInterrupt:
         print("interrupted, stopping ...")
