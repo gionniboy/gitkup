@@ -60,11 +60,14 @@ def setup_logging(filepath="logging.json", log_level=logging.INFO):
     LOGGER.debug('LOGGING OK - path %s - level %s', filepath, log_level)
 
 
-def read_config(default_conf="config.local.ini"):
+def read_config(default_conf="config.local.ini", mail=False):
     """ setup configuration
 
     :param default_conf: filename
     :param type: string
+
+    :param mail: arg flag to mail notification
+    :param type: boolean
 
     :return GITLABSERVER: gitlab server host
     :return type: string
@@ -99,18 +102,22 @@ def read_config(default_conf="config.local.ini"):
     # load gitlab section
     GITLABSERVER = config['GITLAB']['SERVER']
     GITLABTOKEN = config['GITLAB']['TOKEN']
-    # load mail section
-    MAILSERVER = config['MAIL']['SERVER']
-    validate_domain(MAILSERVER)
-    MAILPORT = config['MAIL']['PORT']
-    MAILACCOUNT = config['MAIL']['ACCOUNT']
-    validate_email(MAILACCOUNT)
-    MAILPASSWORD = config['MAIL']['PASSWORD']
-    DESTINATIONMAIL = config['MAIL']['DESTINATION']
-    validate_email(DESTINATIONMAIL)
-    LOGGER.debug('MAIL - CONFIGURATION LOADED')
 
-    return (GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
+    # load mail section
+    if mail==True:
+        MAILSERVER = config['MAIL']['SERVER']
+        validate_domain(MAILSERVER)
+        MAILPORT = config['MAIL']['PORT']
+        MAILACCOUNT = config['MAIL']['ACCOUNT']
+        validate_email(MAILACCOUNT)
+        MAILPASSWORD = config['MAIL']['PASSWORD']
+        DESTINATIONMAIL = config['MAIL']['DESTINATION']
+        validate_email(DESTINATIONMAIL)
+        LOGGER.debug('MAIL - CONFIGURATION LOADED')
+
+        return (GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
+    else:
+        return (GITLABSERVER, GITLABTOKEN)
 
 
 def validate_email(email):
@@ -272,31 +279,52 @@ def sendmail(MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL, G
     s.quit()
 
 
+def str2bool(v):
+    """
+    true/false for argparse mail flag
+    https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+
+    :param v:
+
+    :return: true/false or raise exception
+    """
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def main():
     """ main """
     # Start timestamp
     LOGGER.info("Backup starts at: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     # Extract url from arguments
     parser = argparse.ArgumentParser(
-        description='Fast backup private repos from gitlab server [api v4 - gitlab9.0+]',
+        description='Fast backup private repos from gitlab server [api v4 - gitlab9.0+]. Configure before use.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # parser.add_argument("--url", default="gitlab.com",
-    #                     type=str, help="GitLab Server url")
-    # parser.add_argument("--token", required=True, type=str,
-    #                     help="Private Token with read permission")
     parser.add_argument(
         "--dest", default="./repos_backup", help="where repositories will be backup")
+    parser.add_argument("--mail", type=str2bool, nargs='?', const=True, default=False,
+                         help="Activate mail notification.")
     args = parser.parse_args()
 
     BACKUP_DIR = args.dest
 
     # unpack config
-    GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = read_config()
+
+    if args.mail == True:
+        GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = read_config(mail=True)
+    else:
+        GITLABSERVER, GITLABTOKEN = read_config()
 
     makedir(BACKUP_DIR)
     gitkup(BACKUP_DIR, GITLABSERVER, GITLABTOKEN)
-    sendmail(MAILSERVER, MAILPORT, MAILACCOUNT,
-             MAILPASSWORD, DESTINATIONMAIL, GITLABSERVER)
+
+    if args.mail:
+        sendmail(MAILSERVER, MAILPORT, MAILACCOUNT,
+                 MAILPASSWORD, DESTINATIONMAIL, GITLABSERVER)
 
     # End timestamp
     LOGGER.info("Backup end at: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

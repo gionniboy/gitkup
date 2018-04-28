@@ -21,9 +21,9 @@ $ python gitkup.py --help
 
 Example
 ```console
-$ python gitkup.py --token MYAMAZINGSUPERSECRETTOKEN
-$ python gitkup.py --url supergitlabserver.example.com --token MYAMAZINGSUPERSECRETTOKEN
-$ python gitkup.py --token MYAMAZINGSUPERSECRETTOKEN --dest ./my_treasure
+$ python gitkup.py
+$ python gitkup.py --dest ./my_treasure
+$ python gitkup.py --mail true
 ```
 
 
