@@ -1,0 +1,26 @@
+sudo: false
+dist: trusty
+language: python
+python:
+  - "3.6"
+  - "3.5"
+  - "3.4"
+env:
+  global:
+    - GIT_ASK_YESNO='false'
+    - PYTHONIOENCODING='utf-8'
+    - PIPENV_IGNORE_VIRTUALENVS=1
+    - CC_TEST_REPORTER_ID=686b85e0b058a6111cf832071a05c23232cc560289b2d7fdb50e037d7c2b0d48
+install:
+  - "pip install --upgrade pip"
+  - "pip install pipenv"
+  - "pipenv install --dev"
+  - 'pipenv install --system --dev'
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+script:
+  - 'pipenv run time -p pytest -v'
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

@@ -1,0 +1,17 @@
+version: "2"
+plugins:
+  duplication:
+    enabled: true
+  fixme:
+    enabled: true
+  radon:
+    enabled: true
+  pep8:
+    enabled: true
+  sonar-python:
+    enabled: true
+exclude_paths:
+  - ".*"
+  - "*.md"
+  - "*.ini"
+  - "LICENSE"
