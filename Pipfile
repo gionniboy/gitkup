@@ -7,6 +7,8 @@ name = "pypi"
 pytest = "*"
 pylint = "*"
 "autopep8" = "*"
+coverage = "*"
+pytest-cov = "*"
 
 [packages]
 requests = "==2.18.4"
@@ -16,4 +18,4 @@ GitPython = "==2.1.9"
 python_version = "3.6"
 
 [scripts]
-tests = "time -p pytest -v"
+tests = "time -p pytest -v --cov=./"

@@ -12,6 +12,7 @@ plugins:
     enabled: true
 exclude_paths:
   - ".*"
+  - "test_*"
   - "*.md"
   - "*.ini"
   - "LICENSE"
