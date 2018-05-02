@@ -15,7 +15,7 @@ __status__ = "Development"
 import os
 import sys
 import re
-import signal
+# import signal
 import argparse
 from datetime import datetime
 
@@ -24,16 +24,14 @@ import logging
 import logging.config
 
 import json
-import requests
 
-from time import gmtime, strftime
 from subprocess import Popen, PIPE
 
 import smtplib
 from email.mime.text import MIMEText
 import email.utils
 
-import git
+import requests
 from git import Repo, GitCommandError
 
 
@@ -58,6 +56,7 @@ def setup_logging(filepath="logging.json", log_level=logging.INFO):
         LOGGER.info('LOGGING SETUP from JSON %s', filepath)
 
     LOGGER.debug('LOGGING OK - path %s - level %s', filepath, log_level)
+    return True
 
 
 def read_config(default_conf="config.local.ini", mail=False):
@@ -104,7 +103,7 @@ def read_config(default_conf="config.local.ini", mail=False):
     GITLABTOKEN = config['GITLAB']['TOKEN']
 
     # load mail section
-    if mail==True:
+    if mail == True:
         MAILSERVER = config['MAIL']['SERVER']
         validate_domain(MAILSERVER)
         MAILPORT = config['MAIL']['PORT']
@@ -120,19 +119,20 @@ def read_config(default_conf="config.local.ini", mail=False):
         return (GITLABSERVER, GITLABTOKEN)
 
 
-def validate_email(email):
+def validate_email(to_validate):
     """Check if the argument is a syntax-valid email.
 
-    :param email: email string from config
+    :param to_validate: email string from config
     :param type: string
 
     :return: validate or exit
     """
     mail_regex = re.compile(
         r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$')
-    if not mail_regex.match(email):
-        LOGGER.error("Email not valid %s", email)
+    if not mail_regex.match(to_validate):
+        LOGGER.error("Email not valid %s", to_validate)
         sys.exit("Invalid email specified.")
+    return True
 
 
 def validate_domain(domain):
@@ -148,6 +148,7 @@ def validate_domain(domain):
     if not domain_regex.match(domain):
         LOGGER.error("Domain not valid %s", domain)
         sys.exit("Invalid domain specified.")
+    return True
 
 
 # def signal_handler(signal, frame):
@@ -196,7 +197,8 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
     : return: git clone or update private repositories
     """
     gitlab_url = (
-        "https://{}/api/v4/projects?visibility=private&private_token={}".format(URL, TOKEN))
+        "https://{}/api/v4/projects?visibility=private&private_token={}".format(
+            URL, TOKEN))
     LOGGER.info("Please wait: this operation may take a while ...")
     r = requests.get(gitlab_url)
     if r.status_code != 200:
