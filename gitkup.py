@@ -31,6 +31,7 @@ import smtplib
 from email.mime.text import MIMEText
 import email.utils
 
+import validators
 import requests
 from git import Repo, GitCommandError
 
@@ -105,50 +106,18 @@ def read_config(default_conf="config.local.ini", mail=False):
     # load mail section
     if mail == True:
         MAILSERVER = config['MAIL']['SERVER']
-        validate_domain(MAILSERVER)
+        validators.domain(MAILSERVER)
         MAILPORT = config['MAIL']['PORT']
         MAILACCOUNT = config['MAIL']['ACCOUNT']
-        validate_email(MAILACCOUNT)
+        validators.email(MAILACCOUNT)
         MAILPASSWORD = config['MAIL']['PASSWORD']
         DESTINATIONMAIL = config['MAIL']['DESTINATION']
-        validate_email(DESTINATIONMAIL)
+        validators.email(DESTINATIONMAIL)
         LOGGER.debug('MAIL - CONFIGURATION LOADED')
 
         return (GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL)
     else:
         return (GITLABSERVER, GITLABTOKEN)
-
-
-def validate_email(to_validate):
-    """Check if the argument is a syntax-valid email.
-
-    :param to_validate: email string from config
-    :param type: string
-
-    :return: validate or exit
-    """
-    mail_regex = re.compile(
-        r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$')
-    if not mail_regex.match(to_validate):
-        LOGGER.error("Email not valid %s", to_validate)
-        sys.exit("Invalid email specified.")
-    return True
-
-
-def validate_domain(domain):
-    """Check if the argument is a syntax-valid domain.
-
-    :param domain: domain string from positional arg
-    :param type: string
-
-    :return: validate or exit
-    """
-    domain_regex = re.compile(
-        r'^(?=.{4,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{,61}[a-zA-Z0-9]\.)+[a-zA-Z0-9]{2,5}$')
-    if not domain_regex.match(domain):
-        LOGGER.error("Domain not valid %s", domain)
-        sys.exit("Invalid domain specified.")
-    return True
 
 
 # def signal_handler(signal, frame):
@@ -316,7 +285,7 @@ def main():
 
     # unpack config
 
-    if args.mail == True:
+    if args.mail is True:
         GITLABSERVER, GITLABTOKEN, MAILSERVER, MAILPORT, MAILACCOUNT, MAILPASSWORD, DESTINATIONMAIL = read_config(mail=True)
     else:
         GITLABSERVER, GITLABTOKEN = read_config()
@@ -338,8 +307,8 @@ if __name__ == '__main__':
         setup_logging()
         main()
     except GitCommandError as err:
-            LOGGER.error('Git Command Error %s', err)
-            sys.exit("Please configure ssh identity on your ssh-agent and retry")
+        LOGGER.error('Git Command Error %s', err)
+        sys.exit("Please configure ssh identity on your ssh-agent and retry")
     except KeyboardInterrupt:
         print("interrupted, stopping ...")
         sys.exit(42)
