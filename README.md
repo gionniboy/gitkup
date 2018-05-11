@@ -4,6 +4,10 @@
 
 [![Test Coverage](https://api.codeclimate.com/v1/badges/20e51cf47dda0b5dcaa3/test_coverage)](https://codeclimate.com/github/gionniboy/gitkup/test_coverage)
 
+[![Updates](https://pyup.io/repos/github/gionniboy/gitkup/shield.svg)](https://pyup.io/repos/github/gionniboy/gitkup/)
+
+[![Python 3](https://pyup.io/repos/github/gionniboy/gitkup/python-3-shield.svg)](https://pyup.io/repos/github/gionniboy/gitkup/)
+
 
 # **gitkup**
 gitkup is a little python script to quickly backup all private repositories from a gitlab server
