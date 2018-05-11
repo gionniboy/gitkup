@@ -1,11 +1,9 @@
 [![Build Status](https://travis-ci.org/gionniboy/gitkup.svg?branch=master)](https://travis-ci.org/gionniboy/gitkup)
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/20e51cf47dda0b5dcaa3/maintainability)](https://codeclimate.com/github/gionniboy/gitkup/maintainability)
-
 [![Test Coverage](https://api.codeclimate.com/v1/badges/20e51cf47dda0b5dcaa3/test_coverage)](https://codeclimate.com/github/gionniboy/gitkup/test_coverage)
 
 [![Updates](https://pyup.io/repos/github/gionniboy/gitkup/shield.svg)](https://pyup.io/repos/github/gionniboy/gitkup/)
-
 [![Python 3](https://pyup.io/repos/github/gionniboy/gitkup/python-3-shield.svg)](https://pyup.io/repos/github/gionniboy/gitkup/)
 
 
