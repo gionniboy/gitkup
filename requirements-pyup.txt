@@ -9,7 +9,7 @@ requests==2.18.4
 six==1.11.0
 smmap2==2.0.3
 urllib3==1.22
-validators==0.12.1
+validators==0.12.2
 # dev
 astroid==1.6.3
 attrs==18.1.0
