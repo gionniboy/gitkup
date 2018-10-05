@@ -18,6 +18,8 @@ import re
 # import signal
 import argparse
 from datetime import datetime
+import pathlib
+import urllib.parse
 
 import configparser
 import logging
@@ -179,15 +181,19 @@ def gitkup(BACKUP_DIR, URL, TOKEN):
     projects = r.json()
     for project in projects:
         url = project["ssh_url_to_repo"]
-        localPath = "{}/{}.git".format(BACKUP_DIR, project["path"])
-        if not os.path.exists(localPath):
-            LOGGER.info("Create backup for %s", localPath)
-            Repo.clone_from(url, localPath)
+        url_parsed = urllib.parse.urlparse(project['http_url_to_repo'])
+        repo_path = pathlib.Path(url_parsed.path.lstrip('/'))
+        local_path = pathlib.Path(BACKUP_DIR) / repo_path
+
+        if not local_path.is_dir():
+            LOGGER.info("Create backup for %s", local_path)
+            local_path.mkdir(parents=True)
+            Repo.clone_from(url, str(local_path.resolve()))
             LOGGER.info("%s cloned", url)
         else:
-            LOGGER.info("Update backup for %s", localPath)
+            LOGGER.info("Update backup for %s", local_path)
             # TODO: refactor this shit
-            dir_command = ['cd', localPath]
+            dir_command = ['cd', str(local_path.resolve())]
             git_command = ['git', 'remote', 'update']
             git_query = Popen(git_command)
             backup_state = Popen(dir_command, cwd=BACKUP_DIR,
