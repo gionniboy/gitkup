@@ -1,7 +1,7 @@
 -i https://pypi.org/simple
 certifi==2018.11.29
 chardet==3.0.4
-decorator==4.3.0
+decorator==4.3.2
 gitdb2==2.0.3
 gitpython==2.1.10
 idna==2.6
