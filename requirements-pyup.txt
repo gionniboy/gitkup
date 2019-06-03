@@ -7,7 +7,7 @@ gitpython==2.1.11
 idna==2.8
 requests==2.22.0
 six==1.12.0
-smmap2==2.0.3
+smmap2==2.0.5
 urllib3==1.22
 validators==0.12.2
 # dev
