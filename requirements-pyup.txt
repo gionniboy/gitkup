@@ -4,7 +4,7 @@ chardet==3.0.4
 decorator==4.4.0
 gitdb2==2.0.5
 gitpython==2.1.13
-idna==2.6
+idna==2.8
 requests==2.18.4
 six==1.11.0
 smmap2==2.0.3
