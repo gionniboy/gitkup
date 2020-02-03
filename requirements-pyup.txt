@@ -2,7 +2,7 @@
 certifi==2019.11.28
 chardet==3.0.4
 decorator==4.4.1
-gitdb2==2.0.3
+gitdb2==2.0.6
 gitpython==2.1.10
 idna==2.6
 requests==2.18.4
