@@ -5,7 +5,7 @@ decorator==4.4.1
 gitdb2==2.0.6
 gitpython==3.0.5
 idna==2.8
-requests==2.18.4
+requests==2.22.0
 six==1.11.0
 smmap2==2.0.3
 urllib3==1.22
