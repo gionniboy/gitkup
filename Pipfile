@@ -11,7 +11,7 @@ coverage = "==4.5.1"
 pytest-cov = "==2.5.1"
 
 [packages]
-requests = "==2.18.4"
+requests = "==2.20.0"
 GitPython = "==2.1.9"
 validators = "==0.12.1"
 
