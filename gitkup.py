@@ -3,7 +3,7 @@
 # gitlab server easy backup [ahah you got it :>]
 # need token with right on API, READ_REPOSITORY
 
-__author__ = "GB Pullarà"
+__author__ = "G Pullara"
 __copyright__ = "Copyright 2018"
 __credits__ = [""]
 __license__ = "BSD-3clause"
